@@ -4,7 +4,7 @@ import time
 from collections import deque
 import csv
 
-# ========== Configuration Parameters ==========
+# ========== 配置参数 ==========
 VIDEO_PATH = "your_video.mp4"
 USE_CAMERA = False
 CAMERA_ID = 0
@@ -16,7 +16,7 @@ SAVE_LOG = True
 LOG_PATH = "1846.csv"
 SHOW_POLAR = True
 DISPLAY_HEIGHT = 720
-# =============================================
+# =================================
 
 
 def _circular_gaussian_smooth(signal, sigma=3.0, half=4):
@@ -55,10 +55,10 @@ class DiskRPMMeter:
         self.map_x = None
         self.map_y = None
 
-        self.rpm_smooth = 0.0          # sliding average RPM over one revolution
-        self.rpm_crossing = 0.0        # zero-crossing detection RPM
-        self.rpm_history = deque()     # accumulates values up to one full revolution
-        self.smooth_window = 50        # initial value, dynamically adjusted based on measured RPM
+        self.rpm_smooth = 0.0          # 一圈滑动平均 RPM
+        self.rpm_crossing = 0.0        # 过零检测 RPM
+        self.rpm_history = deque()     # 累积到一整圈长度
+        self.smooth_window = 50        # 初值，启动后根据实测转速动态调整
 
         self.angle_history = deque(maxlen=4)
         self.last_angle = None
@@ -68,7 +68,7 @@ class DiskRPMMeter:
         self.csv_file = None
         self.csv_writer = None
 
-    # ---------- Ellipse → Polar Coordinate Mapping ----------
+    # ---------- 椭圆极坐标映射 ----------
     def build_polar_map(self, shape):
         cx, cy = self.center
         a, b = self.a, self.b
@@ -81,7 +81,7 @@ class DiskRPMMeter:
         self.map_x = (cx + F * a * np.cos(A)).astype(np.float32)
         self.map_y = (cy + F * b * np.sin(A)).astype(np.float32)
 
-    # ---------- Manual Rectangle ROI Selection ----------
+    # ---------- 手动矩形 ROI ----------
     @staticmethod
     def select_roi(first_frame):
         rect = None
@@ -113,7 +113,7 @@ class DiskRPMMeter:
         cv2.namedWindow("Select Disk Region", cv2.WINDOW_NORMAL)
         cv2.setMouseCallback("Select Disk Region", mouse_cb)
 
-        print("Drag to select elliptical disk region. Press ENTER to confirm, ESC to quit.")
+        print("拖拽框选椭圆磁盘区域，按 ENTER 确认，按 ESC 退出")
 
         while True:
             disp = first_frame.copy()
@@ -149,10 +149,10 @@ class DiskRPMMeter:
         center = (x + w // 2, y + h // 2)
         a = w // 2
         b = h // 2
-        print(f"Selected region: {rect}  Center: {center}  Semi-axes: a={a}, b={b}")
+        print(f"框选区域: {rect}  中心: {center}  半轴: a={a}, b={b}")
         return center, a, b
 
-    # ---------- Find Black Line Angle (Sub-pixel) ----------
+    # ---------- 找黑线角度（亚像素） ----------
     def find_line_angle(self, polar_gray):
         r_min = int(NUM_RADIAL * RADIAL_MIN_FRAC)
         r_max = int(NUM_RADIAL * RADIAL_MAX_FRAC)
@@ -172,19 +172,19 @@ class DiskRPMMeter:
 
         return angle, confidence, col_avg_smooth
 
-    # ---------- Dynamically Compute Sliding Window Size ----------
+    # ---------- 动态计算平滑窗口大小 ----------
     def _update_smooth_window(self, rpm, fps):
-        """Dynamically set sliding average window = one full revolution worth of frames"""
+        """根据当前转速动态设定滑动平均窗口 = 一整圈的帧数"""
         if abs(rpm) < 1:
             return
         period_s = 60.0 / abs(rpm)
         window = int(period_s * fps)
-        window = max(10, min(window, 200))  # clamp to 10~200 frames
+        window = max(10, min(window, 200))  # 10~200 帧范围
         self.smooth_window = window
 
-    # ---------- Update RPM ----------
+    # ---------- 更新 RPM ----------
     def update_rpm(self, angle, video_time, confidence, fps):
-        # Low confidence: predict using velocity
+        # 低置信度：用速度预测
         used_angle = angle
         if confidence < 0.10 and self.last_angle is not None:
             if len(self.angle_history) >= 2:
@@ -206,7 +206,7 @@ class DiskRPMMeter:
 
         self.angle_history.append((used_angle, video_time))
 
-        # ── Inter-frame Instantaneous RPM ──
+        # ── 帧间瞬时 RPM ──
         rpm_instant = 0.0
         if len(self.angle_history) >= 2:
             a_prev, t_prev = self.angle_history[-2]
@@ -220,20 +220,20 @@ class DiskRPMMeter:
             if dt > 0:
                 rpm_instant = (delta / 360.0) * (60.0 / dt)
 
-        # ── One-Revolution Sliding Average RPM ──
+        # ── 一整圈滑动平均 RPM ──
         if rpm_instant != 0:
             self.rpm_history.append(rpm_instant)
 
-        # Dynamically adjust window length
+        # 动态调整窗口长度
         self._update_smooth_window(self.rpm_smooth, fps)
 
-        # Keep only the most recent smooth_window values
+        # 保留最近 smooth_window 个值
         while len(self.rpm_history) > self.smooth_window:
             self.rpm_history.popleft()
 
         self.rpm_smooth = float(np.mean(list(self.rpm_history))) if self.rpm_history else 0.0
 
-        # ── Zero-Crossing Detection RPM ──
+        # ── 过零检测 RPM ──
         if self.last_angle is not None:
             if self.last_angle > 270 and angle < 90:
                 self.revolutions += 1
@@ -252,7 +252,7 @@ class DiskRPMMeter:
 
         self.last_angle = angle
 
-    # ---------- Logging ----------
+    # ---------- 日志 ----------
     def _init_log(self):
         if SAVE_LOG:
             self.csv_file = open(LOG_PATH, "w", newline="", encoding="utf-8")
@@ -268,34 +268,34 @@ class DiskRPMMeter:
     def _close_log(self):
         if self.csv_file:
             self.csv_file.close()
-            print(f"Data saved to {LOG_PATH}")
+            print(f"数据已保存到 {LOG_PATH}")
 
-    # ---------- Main Loop ----------
+    # ---------- 主循环 ----------
     def run(self):
         cap = cv2.VideoCapture(self.camera_id if self.use_camera else self.video_path)
         if not cap.isOpened():
-            print("Unable to open video source")
+            print("无法打开视频源")
             return
 
         fps = cap.get(cv2.CAP_PROP_FPS)
         if fps <= 0:
             fps = 60.0
-            print(f"Cannot get frame rate, defaulting to {fps} FPS")
+            print(f"无法获取帧率，默认 {fps} FPS")
         else:
-            print(f"Video frame rate: {fps:.2f} FPS")
+            print(f"视频帧率: {fps:.2f} FPS")
 
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        print(f"Total frames: {total_frames}")
+        print(f"总帧数: {total_frames}")
 
         ret, first_frame = cap.read()
         if not ret:
-            print("Failed to read first frame")
+            print("读取第一帧失败")
             cap.release()
             return
 
         self.center, self.a, self.b = self.select_roi(first_frame)
         if self.center is None:
-            print("No region selected, exiting")
+            print("未选择区域，退出")
             cap.release()
             return
 
@@ -308,7 +308,7 @@ class DiskRPMMeter:
             cv2.namedWindow("Polar Transform", cv2.WINDOW_NORMAL)
 
         frame_idx = 0
-        print("Processing frame by frame... Press ESC to quit, R to re-select ROI.")
+        print("逐帧处理中，按 ESC 退出，按 R 重新框选...")
 
         while True:
             ret, frame = cap.read()
@@ -332,7 +332,7 @@ class DiskRPMMeter:
             self._write_log(frame_idx, video_time, angle,
                             self.rpm_smooth, self.rpm_crossing, confidence)
 
-            # ── Visualization ──
+            # ── 可视化 ──
             cx, cy = self.center
 
             if DISPLAY_HEIGHT > 0 and DISPLAY_HEIGHT < frame.shape[0]:
@@ -403,7 +403,7 @@ class DiskRPMMeter:
             if key == 27:
                 break
             elif key == ord("r"):
-                print("Re-selecting disk region...")
+                print("重新框选磁盘区域...")
                 self.center, self.a, self.b = self.select_roi(frame)
                 if self.center and self.a and self.b:
                     self.build_polar_map(frame.shape[:2])
@@ -419,12 +419,12 @@ class DiskRPMMeter:
 
         if self.rpm_history:
             vals = list(self.rpm_history)
-            print(f"\nMeasurement complete")
-            print(f"  Total revolutions: {self.revolutions}")
-            print(f"  Average RPM: {np.mean(vals):.2f}")
-            print(f"  Max RPM: {np.max(vals):.2f}")
-            print(f"  Min RPM: {np.min(vals):.2f}")
-            print(f"  Std dev:   {np.std(vals):.2f}")
+            print(f"\n测量完成")
+            print(f"  总转数: {self.revolutions}")
+            print(f"  平均 RPM: {np.mean(vals):.2f}")
+            print(f"  最大 RPM: {np.max(vals):.2f}")
+            print(f"  最小 RPM: {np.min(vals):.2f}")
+            print(f"  标准差:   {np.std(vals):.2f}")
 
 
 if __name__ == "__main__":

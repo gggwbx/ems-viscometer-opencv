@@ -1,21 +1,21 @@
 # EMS Viscometer — OpenCV RPM Tracking Platform
 
-基于 OpenCV 的电磁旋转粘度计视频转速跟踪与数据分析 Web 应用。
+An OpenCV-based electromagnetic rotational viscometer video RPM tracking and data analysis web application.
 
-## 功能
+## Features
 
-- **视频上传与 ROI 框选**：上传实验视频，在首帧上鼠标拖拽框选磁盘区域
-- **逐帧 RPM 跟踪**：椭圆极坐标映射 → 黑线角度亚像素检测 → 三重 RPM 计算（帧间瞬时 / 滑动平均 / 过零检测）
-- **实时可视化**：MJPEG 流逐帧播放跟踪画面，含 OpenCV 标注（椭圆 ROI、角度线、RPM 数值）
-- **RPM 曲线与数据表**：ECharts 实时绘制，跟踪完成后自动多项式拟合去异常值
-- **数据拟合**：6 种模型（线性 / 正比例 / 二次 / 指数 / 对数 / 反比例），KaTeX 渲染公式，导出 JSON
-- **AI 实验助手**：兼容 OpenAI / DeepSeek / Kimi 等 API，SSE 流式对话 + 数据分析
-- **实验说明页**：Markdown 渲染，支持公式
-- **深色/浅色模式**
+- **Video Upload & ROI Selection**: Upload experiment video, drag to select disk region on the first frame
+- **Frame-by-Frame RPM Tracking**: Elliptical polar coordinate mapping → black line angle sub-pixel detection → triple RPM calculation (inter-frame instantaneous / sliding average / zero-crossing detection)
+- **Real-time Visualization**: MJPEG stream frame-by-frame playback with tracking overlay, featuring OpenCV annotations (elliptical ROI, angle line, RPM values)
+- **RPM Curve & Data Table**: Real-time ECharts plotting, automatic polynomial fitting and outlier removal after tracking completes
+- **Data Fitting**: 6 models (Linear / Proportional / Quadratic / Exponential / Logarithmic / Reciprocal), KaTeX rendered formulas, JSON export
+- **AI Experiment Assistant**: Compatible with OpenAI / DeepSeek / Kimi APIs, SSE streaming conversation + data analysis
+- **Experiment Notes Page**: Markdown rendering with formula support
+- **Dark/Light Mode**
 
-## 快速开始
+## Quick Start
 
-### 后端
+### Backend
 
 ```bash
 cd backend
@@ -23,7 +23,7 @@ pip install -r requirements.txt
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 前端
+### Frontend
 
 ```bash
 cd frontend
@@ -31,71 +31,71 @@ npm install
 npm run dev
 ```
 
-访问 `http://localhost:3000`
+Visit `http://localhost:3000`
 
-### 配置 AI（可选）
+### Configure AI (Optional)
 
-编辑 `backend/config.py`：
+Edit `backend/config.py`:
 
 ```python
-LLM_API_KEY = "sk-你的密钥"
+LLM_API_KEY = "sk-your-key"
 LLM_BASE_URL = "https://api.deepseek.com/v1"
 LLM_MODEL = "deepseek-chat"
 ```
 
-不配置也不影响核心功能。
+Core functionality works without AI configuration.
 
-## 项目结构
+## Project Structure
 
 ```
 ├── backend/
-│   ├── main.py               # FastAPI 入口
-│   ├── rpm_tracker_core.py   # RPM 跟踪核心算法
-│   ├── video_processor.py    # 视频上传 / 任务管理
-│   ├── data_fitter.py        # 数据拟合（scipy / 6 种模型）
-│   ├── ai_assistant.py       # LLM 对话（SSE 流式）
-│   ├── context_loader.py     # 实验上下文加载
-│   ├── config.py             # 全局配置
-│   ├── models.py             # Pydantic 数据模型
+│   ├── main.py               # FastAPI entry point
+│   ├── rpm_tracker_core.py   # RPM tracking core algorithm
+│   ├── video_processor.py    # Video upload / task management
+│   ├── data_fitter.py        # Data fitting (scipy / 6 models)
+│   ├── ai_assistant.py       # LLM conversation (SSE streaming)
+│   ├── context_loader.py     # Experiment context loader
+│   ├── config.py             # Global configuration
+│   ├── models.py             # Pydantic data models
 │   └── requirements.txt
 ├── frontend/
 │   └── src/
 │       ├── pages/
-│       │   ├── VideoTrack.tsx    # 视频跟踪
-│       │   ├── DataFit.tsx       # 数据拟合
-│       │   ├── AIAssistant.tsx   # AI 助手
-│       │   └── ExperimentNotes.tsx # 实验说明
-│       ├── store/AppState.tsx     # 全局状态
-│       └── api/client.ts          # API 封装
-├── 上下文/                    # 实验上下文目录（用户自行添加 .md）
-├── rpm_tracker.py            # 参考：原始桌面版脚本
-└── ARCHITECTURE.md           # 架构文档
+│       │   ├── VideoTrack.tsx    # Video tracking
+│       │   ├── DataFit.tsx       # Data fitting
+│       │   ├── AIAssistant.tsx   # AI assistant
+│       │   └── ExperimentNotes.tsx # Experiment notes
+│       ├── store/AppState.tsx     # Global state
+│       └── api/client.ts          # API wrapper
+├── context/                  # Experiment context directory (user adds .md files)
+├── rpm_tracker.py            # Reference: original desktop script
+└── ARCHITECTURE.md           # Architecture documentation
 ```
 
 ## API
 
-| 端点 | 方法 | 说明 |
+| Endpoint | Method | Description |
 |------|------|------|
-| `/api/upload` | POST | 上传视频 |
-| `/api/roi` | POST | 框选 ROI |
-| `/api/track/start` | POST | 启动跟踪 |
-| `/api/track/status/{id}` | GET | 查询进度 |
-| `/api/track/stream/{id}` | GET | MJPEG 实时画面 |
-| `/api/track/result/{id}` | GET | 获取结果 + RPM 拟合 |
-| `/api/track/result/{id}/csv` | GET | 下载 CSV |
-| `/api/fit` | POST | 数据拟合 |
-| `/api/ai/chat` | POST | AI 对话 |
-| `/api/ai/analyze` | POST | AI 分析数据 |
-| `/api/experiment/context` | GET | 实验上下文 |
+| `/api/upload` | POST | Upload video |
+| `/api/roi` | POST | Set ROI |
+| `/api/track/start` | POST | Start tracking |
+| `/api/track/status/{id}` | GET | Query progress |
+| `/api/track/stream/{id}` | GET | MJPEG real-time view |
+| `/api/track/result/{id}` | GET | Get results + RPM fitting |
+| `/api/track/result/{id}/csv` | GET | Download CSV |
+| `/api/fit` | POST | Data fitting |
+| `/api/ai/chat` | POST | AI conversation |
+| `/api/ai/analyze` | POST | AI data analysis |
+| `/api/experiment/context` | GET | Experiment context |
 
-## 技术栈
+## Tech Stack
 
-Python / FastAPI / OpenCV / SciPy ｜ React / TypeScript / Vite / Tailwind CSS ｜ ECharts / KaTeX
+Python / FastAPI / OpenCV / SciPy  |  React / TypeScript / Vite / Tailwind CSS  |  ECharts / KaTeX
 
-## 添加上下文
+## Adding Context
 
-将 `.md` 文件放入 `上下文/` 目录，重启后端或 `POST /api/experiment/context/reload`。
+Place `.md` files in the `context/` directory, restart the backend or call `POST /api/experiment/context/reload`.
 
-## 详细文档
+## Detailed Documentation
 
-参见 [ARCHITECTURE.md](ARCHITECTURE.md)
+See [ARCHITECTURE.md](ARCHITECTURE.md)

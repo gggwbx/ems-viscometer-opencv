@@ -8,10 +8,10 @@ import os
 import re
 from typing import Optional
 
-CONTEXT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "context")
+CONTEXT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "上下文")
 os.makedirs(CONTEXT_DIR, exist_ok=True)
 
-# Personal info filtering regex
+# 个人信息过滤正则
 _PHONE_RE = re.compile(r'1[3-9]\d{9}')
 _EMAIL_RE = re.compile(r'[\w.\-]+@[\w.\-]+')
 _QQ_RE = re.compile(r'\d{5,12}@qq\.com')
@@ -20,7 +20,7 @@ _PURE_TABLE_ROW = re.compile(r'^[|  \t\w\u4e00-\u9fff·]+[|][|  \t\w\u4e00-\u9ff
 
 
 def _clean_text(text: str) -> str:
-    """Deduplicate + filter personal info + table row split dedup"""
+    """去重 + 过滤个人信息 + 表格行拆分去重"""
     lines = text.split("\n")
     cleaned = []
     seen = set()
@@ -33,7 +33,7 @@ def _clean_text(text: str) -> str:
             cleaned.append(line)
             continue
 
-        # Table rows with | delimiter: split into independent clauses, dedup then keep
+        # 含 | 分隔符的表格行：拆分成独立子句，去重后保留
         if "|" in stripped:
             parts = [p.strip() for p in stripped.split("|")]
             unique_parts = []
@@ -41,7 +41,7 @@ def _clean_text(text: str) -> str:
             for p in parts:
                 if not p or len(p) < 2:
                     continue
-                # Skip parts containing personal info
+                # 跳过含个人信息的部分
                 if _PHONE_RE.search(p) or _EMAIL_RE.search(p):
                     continue
                 if "通讯地址" in p or "联系电话" in p or "所在单位" in p:
@@ -52,7 +52,7 @@ def _clean_text(text: str) -> str:
                     continue
                 if re.match(r'^(本科|硕士|博士|专科|中级|高级)$', p):
                     continue
-                # Dedup
+                # 去重
                 key = p[:60]
                 if key not in seen_parts and key not in seen:
                     unique_parts.append(p)
@@ -69,11 +69,11 @@ def _clean_text(text: str) -> str:
                 cleaned.append(p)
             continue
 
-        # Skip lines containing phone numbers or email addresses
+        # 跳过含手机号、邮箱的行
         if _PHONE_RE.search(stripped) or _EMAIL_RE.search(stripped):
             continue
 
-        # Skip personal info lines
+        # 跳过个人信息行
         if "通讯地址" in stripped or "联系电话" in stripped or "所在单位" in stripped:
             continue
         if re.match(r'^[男女]\s+\d{4}', stripped):
@@ -83,7 +83,7 @@ def _clean_text(text: str) -> str:
         if "申报者情况" in stripped or "合作者情况" in stripped or "指导教师" in stripped:
             continue
 
-        # Dedup
+        # 去重
         if stripped == prev:
             continue
         prev = stripped
@@ -103,12 +103,12 @@ def _clean_text(text: str) -> str:
 def _read_txt(path: str) -> str:
     with open(path, "r", encoding="utf-8") as f:
         text = f.read()
-    # .md files don't need dedup cleaning (user-written), only clean .docx extraction results
+    # .md 文件不需要去重清洗（用户手写的），只清洗 .docx 提取的结果
     return text
 
 
 def _read_pdf(path: str) -> str:
-    # Try pdfplumber first
+    # 先试 pdfplumber
     try:
         import pdfplumber
         pages = []
@@ -168,8 +168,8 @@ READERS = {
 
 def load_context() -> tuple[str, list[str], list[str]]:
     """
-    Scan the context directory, read all supported files, merge into a context string.
-    Returns: (context text, loaded file list, empty/failed file list)
+    扫描 上下文 目录，读取所有支持的文件，合并为上下文字符串。
+    返回: (上下文文本, 已加载文件列表, 空/失败文件列表)
     """
     if not os.path.isdir(CONTEXT_DIR):
         return "", [], []
@@ -200,7 +200,7 @@ def load_context() -> tuple[str, list[str], list[str]]:
             print(f"[context] Failed: {filename} - {e}")
 
     if skipped:
-        summary = "\n\n> The following files could not extract text (possibly scanned/image PDF):\n"
+        summary = "\n\n> 以下文件未能提取文本（可能是扫描件/图片PDF）：\n"
         for f in skipped:
             summary += f"> - {f}\n"
         parts.append(summary)
@@ -215,8 +215,8 @@ def get_context(force_reload: bool = False) -> str:
 
 def get_notes() -> str:
     """
-    Return the core content of the experiment notes page.
-    Prioritizes reading 实验说明.md; returns empty if not found.
+    返回实验说明页的核心内容。
+    优先读取 实验说明.md，不存在则返回空。
     """
     if not os.path.isdir(CONTEXT_DIR):
         return ""

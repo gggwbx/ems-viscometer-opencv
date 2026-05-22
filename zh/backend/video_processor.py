@@ -115,7 +115,7 @@ def start_tracking(video_id: str) -> str:
                     t["progress"] = 100
                     t["summary"] = frame_data["summary"]
                     t["current_frame_jpg"] = None
-                    # Auto-fit RPM polynomial after tracking completes
+                    # 跟踪完成后自动做 RPM 多项式拟合
                     if os.path.exists(output_csv):
                         try:
                             fit_result = fit_rpm_smooth(output_csv)
@@ -206,7 +206,7 @@ def find_first_frame(video_id: str) -> Optional[str]:
 
 
 def get_tracking_frame_jpg(task_id: str) -> Optional[bytes]:
-    """Return the current annotated frame JPEG bytes of the tracking task"""
+    """返回跟踪任务的当前标注帧 JPEG 字节"""
     with task_lock:
         for video_id, vtasks in tasks.items():
             t = vtasks.get("tracking", {})

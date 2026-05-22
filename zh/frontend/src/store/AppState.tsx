@@ -38,9 +38,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [fitRows, setFitRows] = useState<{ x: string; y: string }[]>(() => [
     { x: '', y: '' }, { x: '', y: '' }, { x: '', y: '' }, { x: '', y: '' }
   ])
-  const [fitXName, setFitXName] = useState('Speed Ratio')
+  const [fitXName, setFitXName] = useState('转速比')
   const [fitXUnit, setFitXUnit] = useState('1')
-  const [fitYName, setFitYName] = useState('Viscosity')
+  const [fitYName, setFitYName] = useState('粘度')
   const [fitYUnit, setFitYUnit] = useState('μPa·s')
   const [fitModel, setFitModel] = useState('linear')
   const [fitCsvText, setFitCsvText] = useState('')

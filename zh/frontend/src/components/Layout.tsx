@@ -3,10 +3,10 @@ import { useTheme } from '../hooks/useTheme'
 import { Sun, Moon, Video, LineChart, Bot, BookOpen, Beaker } from 'lucide-react'
 
 const navItems = [
-  { to: '/', icon: Video, label: 'Video Tracking' },
-  { to: '/fit', icon: LineChart, label: 'Data Fitting' },
-  { to: '/ai', icon: Bot, label: 'AI Assistant' },
-  { to: '/notes', icon: BookOpen, label: 'Experiment Notes' },
+  { to: '/', icon: Video, label: '视频跟踪' },
+  { to: '/fit', icon: LineChart, label: '数据拟合' },
+  { to: '/ai', icon: Bot, label: 'AI 助手' },
+  { to: '/notes', icon: BookOpen, label: '实验说明' },
 ]
 
 export default function Layout() {
@@ -21,10 +21,10 @@ export default function Layout() {
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-slate-900 dark:text-white leading-tight">
-              EMS Viscometer
+              EMS 粘度计
             </span>
             <span className="text-xs text-slate-500 dark:text-slate-400">
-              Data Analysis Platform
+              数据分析平台
             </span>
           </div>
         </div>
@@ -58,12 +58,12 @@ export default function Layout() {
             {theme === 'dark' ? (
               <>
                 <Sun className="h-4.5 w-4.5" />
-                <span>Light Mode</span>
+                <span>浅色模式</span>
               </>
             ) : (
               <>
                 <Moon className="h-4.5 w-4.5" />
-                <span>Dark Mode</span>
+                <span>深色模式</span>
               </>
             )}
           </button>

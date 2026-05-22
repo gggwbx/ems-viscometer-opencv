@@ -99,7 +99,7 @@ async def track_frame(task_id: str):
 
 @app.get("/api/track/stream/{task_id}")
 async def track_stream(task_id: str):
-    """MJPEG streaming frame-by-frame push, browser native support without JS polling"""
+    """MJPEG 流式逐帧推送，浏览器原生支持无需 JS 轮询"""
     import asyncio
     from fastapi.responses import StreamingResponse
 
@@ -117,7 +117,7 @@ async def track_stream(task_id: str):
                        jpg + b"\r\n")
             else:
                 await asyncio.sleep(0.05)
-            # Check if task is finished
+            # 检查任务是否结束
             from video_processor import tasks as vp_tasks
             found = False
             for vt in vp_tasks.values():

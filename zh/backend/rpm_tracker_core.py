@@ -216,7 +216,7 @@ def process_video(
 
         if csv_writer:
             csv_writer.writerow([frame_idx, f"{video_time:.4f}", f"{angle:.2f}",
-                                   f"{meter.rpm_smooth:.2f}", f"{meter.rpm_crossing:.2f}", f"{confidence:.4f}"])
+                                  f"{meter.rpm_smooth:.2f}", f"{meter.rpm_crossing:.2f}", f"{confidence:.4f}"])
 
         yield {
             "frame": frame_idx,
@@ -282,7 +282,7 @@ def get_video_info(video_path: str) -> Optional[dict]:
 def render_annotated_frame(frame, center, a, b, angle, rpm_smooth, rpm_cross,
                           confidence, frame_idx, total_frames, smooth_window,
                           display_height=480):
-    """Draw annotations on frame (ellipse, angle line, text), return JPEG bytes"""
+    """在帧上绘制标注（椭圆、角度线、文字），返回 JPEG 字节"""
     cx, cy = center
 
     if display_height > 0 and display_height < frame.shape[0]:
@@ -293,25 +293,25 @@ def render_annotated_frame(frame, center, a, b, angle, rpm_smooth, rpm_cross,
         disp = frame.copy()
         sc = 1.0
 
-    # Green ellipse ROI
+    # 绿色椭圆 ROI
     cv2.ellipse(disp, (int(cx * sc), int(cy * sc)),
                 (int(a * sc), int(b * sc)), 0, 0, 360, (0, 255, 0), 2)
-    # Red center point
+    # 红色中心点
     cv2.circle(disp, (int(cx * sc), int(cy * sc)), 5, (0, 0, 255), -1)
-    # Radial range circles
+    # 径向范围圈
     cv2.ellipse(disp, (int(cx * sc), int(cy * sc)),
                 (int(a * RADIAL_MIN_FRAC * sc), int(b * RADIAL_MIN_FRAC * sc)),
                 0, 0, 360, (128, 128, 128), 1)
     cv2.ellipse(disp, (int(cx * sc), int(cy * sc)),
                 (int(a * RADIAL_MAX_FRAC * sc), int(b * RADIAL_MAX_FRAC * sc)),
                 0, 0, 360, (128, 128, 128), 1)
-    # Yellow angle indicator line
+    # 黄色角度指示线
     angle_rad = np.deg2rad(angle)
     lx = int((cx + a * np.cos(angle_rad)) * sc)
     ly = int((cy + b * np.sin(angle_rad)) * sc)
     cv2.line(disp, (int(cx * sc), int(cy * sc)), (lx, ly), (0, 255, 255), 2)
 
-    # Text overlays
+    # 文字覆盖
     cv2.putText(disp, f"RPM(avg): {rpm_smooth:7.1f}  (win={smooth_window})",
                 (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 0), 2)
     cv2.putText(disp, f"RPM(cross):{rpm_cross:7.1f}",
@@ -333,7 +333,7 @@ def render_tracking_frame(video_path: str, frame_idx: int, center: tuple, a: int
                           angle: float, rpm_smooth: float, rpm_cross: float,
                           confidence: float, total_frames: int,
                           display_height: int = 360) -> Optional[bytes]:
-    """Render tracking frame (fallback method: open video, seek to specified frame)"""
+    """渲染跟踪帧（备份方法：打开视频 seek 到指定帧）"""
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         return None
@@ -348,10 +348,10 @@ def render_tracking_frame(video_path: str, frame_idx: int, center: tuple, a: int
 
 def fit_rpm_smooth(csv_path: str, poly_degree: int = 5) -> Optional[dict]:
     """
-    Robustly fit RPM time-series data:
-    1. Use MAD (median absolute deviation) to filter extreme outliers
-    2. Fit a polynomial to the retained points
-    3. Replace outliers with fitted values
+    稳健拟合 RPM 时序数据：
+    1. 用 MAD（中位数绝对偏差）滤掉极端异常点
+    2. 对保留的点做多项式拟合
+    3. 用拟合值替换异常点
     """
     import csv as csv_module
     times = []
@@ -369,7 +369,7 @@ def fit_rpm_smooth(csv_path: str, poly_degree: int = 5) -> Optional[dict]:
     t_arr = np.array(times, dtype=np.float64)
     r_arr = np.array(rpms, dtype=np.float64)
 
-    # Step 1: Filter extreme outliers with MAD (points with abs > 10*MAD marked as invalid)
+    # Step 1: 用 MAD 滤极端异常值（绝对值超过 10*MAD 的点标记为无效）
     median = np.median(r_arr)
     mad = np.median(np.abs(r_arr - median))
     if mad < 1e-6:
@@ -380,16 +380,16 @@ def fit_rpm_smooth(csv_path: str, poly_degree: int = 5) -> Optional[dict]:
     t_clean = t_arr[valid]
     r_clean = r_arr[valid]
 
-    # Step 2: Polynomial fit on cleaned data
+    # Step 2: 对清洗后的数据做多项式拟合
     if len(t_clean) < poly_degree + 1:
         return None
 
     coeffs = np.polyfit(t_clean, r_clean, poly_degree)
     fitted = np.polyval(coeffs, t_arr)
 
-    # Step 3: Compute residuals, mark normal outliers (deviation from fit > 2*std)
+    # Step 3: 计算残差，标记正常异常点（偏离拟合值超过 2 倍标准差）
     residuals = np.abs(r_arr - fitted)
-    # Only compute std on non-extreme points
+    # 只对非极端点计算标准差
     clean_residuals = residuals[valid]
     if len(clean_residuals) == 0:
         return None
@@ -398,7 +398,7 @@ def fit_rpm_smooth(csv_path: str, poly_degree: int = 5) -> Optional[dict]:
         threshold = 1.0
 
     outlier_mask = residuals > threshold
-    outlier_mask = outlier_mask | (~valid)  # Also replace extreme outliers
+    outlier_mask = outlier_mask | (~valid)  # 极端异常点也替换
     corrected = r_arr.copy()
     for i in range(len(corrected)):
         if outlier_mask[i]:
