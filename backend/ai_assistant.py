@@ -10,7 +10,7 @@ def get_client():
     return AsyncOpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL), LLM_MODEL
 
 
-SYSTEM_PROMPT_BASE = """你是一个专业的物理实验助手，专注于抗磁悬浮电磁旋转粘度计实验。
+SYSTEM_PROMPT_BASE = """你是一个专业的实验助手，专注于物理实验的数据分析与解答。
 请用中文回答问题，保持专业、准确、清晰。"""
 
 
