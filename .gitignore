@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+
+# Uploads & results (user data)
+uploads/
+results/
+
+# Environment
+.env
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
