@@ -12,6 +12,9 @@ interface AppState {
   setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>
   contextLoaded: boolean
 
+  driverRpm: string; setDriverRpm: (v: string) => void
+  experimentGroupId: string; setExperimentGroupId: (v: string) => void
+
   fitRows: { x: string; y: string }[]; setFitRows: (v: { x: string; y: string }[]) => void
   fitXName: string; setFitXName: (v: string) => void
   fitXUnit: string; setFitXUnit: (v: string) => void
@@ -35,9 +38,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   })
   const [contextLoaded, setContextLoaded] = useState(false)
 
-  const [fitRows, setFitRows] = useState<{ x: string; y: string }[]>(() => [
-    { x: '', y: '' }, { x: '', y: '' }, { x: '', y: '' }, { x: '', y: '' }
-  ])
+  const [driverRpm, setDriverRpm] = useState('')
+  const [experimentGroupId, setExperimentGroupId] = useState('')
+
+  const [fitRows, setFitRows] = useState<{ x: string; y: string }[]>([])
   const [fitXName, setFitXName] = useState('Speed Ratio')
   const [fitXUnit, setFitXUnit] = useState('1')
   const [fitYName, setFitYName] = useState('Viscosity')
@@ -77,6 +81,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const value: AppState = {
     expContext, setExpContext, saveExpContext, chatMessages, setChatMessages: wrappedSetChatMessages, contextLoaded,
+    driverRpm, setDriverRpm, experimentGroupId, setExperimentGroupId,
     fitRows, setFitRows, fitXName, setFitXName, fitXUnit, setFitXUnit,
     fitYName, setFitYName, fitYUnit, setFitYUnit, fitModel, setFitModel,
     fitCsvText, setFitCsvText, fitResult, setFitResult,

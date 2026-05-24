@@ -3,6 +3,8 @@ import { fetchExperimentContext } from '../api/client'
 
 interface ChatMessage { role: string; content: string }
 interface FitResult { model: string; formula: string; formula_latex: string; params: { name: string; value: number; std_err?: number }[]; r_squared: number; rmse: number; fit_x: number[]; fit_y: number[] }
+interface StatGroup { id: number; label: string; unit: string; data: string }
+interface StatRow { label: string; unit: string; count: number; sum: number; min: number; max: number; range: number; mean: number; median: number; mode: number; variance_sample: number; variance_population: number; std_sample: number; std_population: number; skewness: number; kurtosis: number; q1: number; q2: number; q3: number; iqr: number; sum_of_squares: number; sem: number }
 
 interface AppState {
   expContext: string
@@ -11,6 +13,9 @@ interface AppState {
   chatMessages: ChatMessage[]
   setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>
   contextLoaded: boolean
+
+  driverRpm: string; setDriverRpm: (v: string) => void
+  experimentGroupId: string; setExperimentGroupId: (v: string) => void
 
   fitRows: { x: string; y: string }[]; setFitRows: (v: { x: string; y: string }[]) => void
   fitXName: string; setFitXName: (v: string) => void
@@ -24,6 +29,12 @@ interface AppState {
   notesContent: string; setNotesContent: (v: string) => void
   notesLoaded: boolean; setNotesLoaded: (v: boolean) => void
   notesEditing: boolean; setNotesEditing: (v: boolean) => void
+
+  statCsvText: string; setStatCsvText: (v: string) => void
+  statCsvUnit: string; setStatCsvUnit: (v: string) => void
+  statGroups: StatGroup[]; setStatGroups: (v: StatGroup[]) => void
+  statNextId: number; setStatNextId: (v: number) => void
+  statResults: StatRow[]; setStatResults: (v: StatRow[]) => void
 }
 
 const AppContext = createContext<AppState | null>(null)
@@ -35,9 +46,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   })
   const [contextLoaded, setContextLoaded] = useState(false)
 
-  const [fitRows, setFitRows] = useState<{ x: string; y: string }[]>(() => [
-    { x: '', y: '' }, { x: '', y: '' }, { x: '', y: '' }, { x: '', y: '' }
-  ])
+  const [driverRpm, setDriverRpm] = useState('')
+  const [experimentGroupId, setExperimentGroupId] = useState('')
+
+  const [fitRows, setFitRows] = useState<{ x: string; y: string }[]>([])
   const [fitXName, setFitXName] = useState('转速比')
   const [fitXUnit, setFitXUnit] = useState('1')
   const [fitYName, setFitYName] = useState('粘度')
@@ -49,6 +61,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [notesContent, setNotesContent] = useState('')
   const [notesLoaded, setNotesLoaded] = useState(false)
   const [notesEditing, setNotesEditing] = useState(false)
+
+  const [statCsvText, setStatCsvText] = useState('')
+  const [statCsvUnit, setStatCsvUnit] = useState('')
+  const [statGroups, setStatGroups] = useState<StatGroup[]>([{ id: 0, label: 'Data', unit: '', data: '' }])
+  const [statNextId, setStatNextId] = useState(1)
+  const [statResults, setStatResults] = useState<StatRow[]>([])
 
   const saveExpContext = useCallback((v: string) => {
     setExpContext(v)
@@ -77,10 +95,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const value: AppState = {
     expContext, setExpContext, saveExpContext, chatMessages, setChatMessages: wrappedSetChatMessages, contextLoaded,
+    driverRpm, setDriverRpm, experimentGroupId, setExperimentGroupId,
     fitRows, setFitRows, fitXName, setFitXName, fitXUnit, setFitXUnit,
     fitYName, setFitYName, fitYUnit, setFitYUnit, fitModel, setFitModel,
     fitCsvText, setFitCsvText, fitResult, setFitResult,
     notesContent, setNotesContent, notesLoaded, setNotesLoaded, notesEditing, setNotesEditing,
+    statCsvText, setStatCsvText, statCsvUnit, setStatCsvUnit,
+    statGroups, setStatGroups, statNextId, setStatNextId, statResults, setStatResults,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

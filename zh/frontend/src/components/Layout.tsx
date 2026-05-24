@@ -1,16 +1,28 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useTheme } from '../hooks/useTheme'
-import { Sun, Moon, Video, LineChart, Bot, BookOpen, Beaker } from 'lucide-react'
+import { Sun, Moon, Video, LineChart, Bot, BookOpen, Beaker, BarChart3, Trash2 } from 'lucide-react'
+import { clearAllUploads } from '../api/client'
 
 const navItems = [
   { to: '/', icon: Video, label: '视频跟踪' },
   { to: '/fit', icon: LineChart, label: '数据拟合' },
+  { to: '/stats', icon: BarChart3, label: '统计分析' },
   { to: '/ai', icon: Bot, label: 'AI 助手' },
   { to: '/notes', icon: BookOpen, label: '实验说明' },
 ]
 
 export default function Layout() {
   const { theme, toggle } = useTheme()
+
+  const handleClearUploads = async () => {
+    if (!window.confirm('确定要清空所有上传文件和跟踪结果吗？此操作不可撤销。')) return
+    try {
+      const res = await clearAllUploads()
+      alert(`已清空：${res.deleted.videos} 个视频，${res.deleted.frames} 个首帧，${res.deleted.results} 个跟踪结果`)
+    } catch {
+      alert('清空失败')
+    }
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -49,7 +61,14 @@ export default function Layout() {
           ))}
         </nav>
 
-        <div className="border-t border-slate-200 dark:border-slate-700 px-4 py-3">
+        <div className="border-t border-slate-200 dark:border-slate-700 px-4 py-3 space-y-1">
+          <button
+            onClick={handleClearUploads}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all duration-150"
+          >
+            <Trash2 className="h-4.5 w-4.5" />
+            <span>清空上传文件</span>
+          </button>
           <button
             onClick={toggle}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-150"

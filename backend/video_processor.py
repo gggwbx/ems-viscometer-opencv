@@ -115,7 +115,7 @@ def start_tracking(video_id: str) -> str:
                     t["progress"] = 100
                     t["summary"] = frame_data["summary"]
                     t["current_frame_jpg"] = None
-                    # Auto-fit RPM polynomial after tracking completes
+                    # 跟踪完成后自动做 RPM 多项式拟合
                     if os.path.exists(output_csv):
                         try:
                             fit_result = fit_rpm_smooth(output_csv)
@@ -205,8 +205,66 @@ def find_first_frame(video_id: str) -> Optional[str]:
     return path if os.path.exists(path) else None
 
 
+def cleanup_video(video_id: str) -> dict:
+    deleted = {"video": False, "frame": False, "results": 0}
+    with task_lock:
+        vtasks = tasks.pop(video_id, {})
+
+    video_path = find_video(video_id)
+    if video_path and os.path.exists(video_path):
+        os.remove(video_path)
+        deleted["video"] = True
+
+    frame_path = find_first_frame(video_id)
+    if frame_path and os.path.exists(frame_path):
+        os.remove(frame_path)
+        deleted["frame"] = True
+
+    tracking = vtasks.get("tracking", {})
+    task_id = tracking.get("task_id")
+    if task_id:
+        result_dir = os.path.join(RESULTS_DIR, task_id)
+        if os.path.isdir(result_dir):
+            import shutil
+            shutil.rmtree(result_dir, ignore_errors=True)
+            deleted["results"] = 1
+
+    return deleted
+
+
+def clear_all_uploads() -> dict:
+    import shutil
+    deleted = {"videos": 0, "frames": 0, "results": 0}
+
+    with task_lock:
+        tasks.clear()
+
+    for f in os.listdir(UPLOAD_DIR):
+        fp = os.path.join(UPLOAD_DIR, f)
+        if os.path.isfile(fp):
+            os.remove(fp)
+            deleted["videos"] += 1
+
+    frames_dir = os.path.join(UPLOAD_DIR, "frames")
+    if os.path.isdir(frames_dir):
+        for f in os.listdir(frames_dir):
+            fp = os.path.join(frames_dir, f)
+            if os.path.isfile(fp):
+                os.remove(fp)
+                deleted["frames"] += 1
+
+    if os.path.isdir(RESULTS_DIR):
+        for d in os.listdir(RESULTS_DIR):
+            dp = os.path.join(RESULTS_DIR, d)
+            if os.path.isdir(dp):
+                shutil.rmtree(dp, ignore_errors=True)
+                deleted["results"] += 1
+
+    return deleted
+
+
 def get_tracking_frame_jpg(task_id: str) -> Optional[bytes]:
-    """Return the current annotated frame JPEG bytes of the tracking task"""
+    """返回跟踪任务的当前标注帧 JPEG 字节"""
     with task_lock:
         for video_id, vtasks in tasks.items():
             t = vtasks.get("tracking", {})

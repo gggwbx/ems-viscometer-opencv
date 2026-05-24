@@ -10,16 +10,18 @@ from models import (
     UploadResponse, RoiRequest, TrackStartResponse,
     FitRequest, FitResponse, FitParam,
     AIChatRequest, AIAnalyzeRequest,
+    StatisticsRequest, StatisticsResponse, StatResult,
 )
 import video_processor
 from video_processor import (
     save_upload, set_roi, start_tracking,
     get_track_status, get_track_result,
     find_video, find_first_frame,
-    get_tracking_frame_jpg,
+    get_tracking_frame_jpg, cleanup_video, clear_all_uploads,
     UPLOAD_DIR, RESULTS_DIR,
 )
 from data_fitter import do_fit
+from statistics import compute_groups
 from ai_assistant import chat_stream, analyze_data
 from config import get_experiment_context, get_experiment_notes, reload_context, get_context_file_count, check_config
 
@@ -99,7 +101,7 @@ async def track_frame(task_id: str):
 
 @app.get("/api/track/stream/{task_id}")
 async def track_stream(task_id: str):
-    """MJPEG streaming frame-by-frame push, browser native support without JS polling"""
+    """MJPEG 流式逐帧推送，浏览器原生支持无需 JS 轮询"""
     import asyncio
     from fastapi.responses import StreamingResponse
 
@@ -117,7 +119,7 @@ async def track_stream(task_id: str):
                        jpg + b"\r\n")
             else:
                 await asyncio.sleep(0.05)
-            # Check if task is finished
+            # 检查任务是否结束
             from video_processor import tasks as vp_tasks
             found = False
             for vt in vp_tasks.values():
@@ -188,6 +190,17 @@ async def fit_data(req: FitRequest):
     )
 
 
+@app.post("/api/statistics", response_model=StatisticsResponse)
+async def compute_statistics(req: StatisticsRequest):
+    results = compute_groups([g.model_dump() for g in req.groups])
+    stat_results = []
+    for r in results:
+        if "error" in r:
+            raise HTTPException(400, f"[{r['label']}] {r['error']}")
+        stat_results.append(StatResult(**r))
+    return StatisticsResponse(groups=stat_results)
+
+
 @app.post("/api/ai/chat")
 async def ai_chat(req: AIChatRequest):
     messages = [{"role": m.role, "content": m.content} for m in req.messages]
@@ -227,6 +240,21 @@ async def reload_experiment_context():
 @app.get("/api/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.delete("/api/video/{video_id}")
+async def delete_video(video_id: str):
+    path = find_video(video_id)
+    if path is None:
+        raise HTTPException(404, "Video not found")
+    result = cleanup_video(video_id)
+    return {"status": "ok", "deleted": result}
+
+
+@app.delete("/api/uploads")
+async def clear_uploads():
+    result = clear_all_uploads()
+    return {"status": "ok", "deleted": result}
 
 
 if __name__ == "__main__":

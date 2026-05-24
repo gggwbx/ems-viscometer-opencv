@@ -17,6 +17,7 @@ const MODELS = [
 export default function DataFit() {
   const s = useAppState()
   const formulaRef = useRef<HTMLDivElement>(null)
+  const chartRef = useRef<ReactEChartsCore>(null)
 
   useEffect(() => {
     if (s.fitResult?.formula_latex && formulaRef.current) {
@@ -64,8 +65,68 @@ export default function DataFit() {
 
   const exportReport = () => {
     if (!s.fitResult) return
-    const blob = new Blob([JSON.stringify({ x_name: s.fitXName, x_unit: s.fitXUnit, y_name: s.fitYName, y_unit: s.fitYUnit, model: s.fitResult.model, formula: s.fitResult.formula, params: s.fitResult.params, r_squared: s.fitResult.r_squared, rmse: s.fitResult.rmse }, null, 2)], { type: 'application/json' })
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fit_report.json'; a.click()
+    const instance = chartRef.current?.getEchartsInstance()
+    const chartImage = instance ? instance.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: '#fff' }) : ''
+
+    const paramsRows = s.fitResult.params.map(p =>
+      `<tr><td style="padding:4px 12px 4px 0">${p.name}</td><td style="padding:4px 12px 4px 0;font-weight:600">${p.value}</td><td style="padding:4px 0">${p.std_err ?? '—'}</td></tr>`
+    ).join('')
+
+    const dataRows = s.fitRows.filter(r => r.x && r.y).map((r, i) =>
+      `<tr><td style="padding:3px 12px 3px 0;color:#94a3b8">${i + 1}</td><td style="padding:3px 12px 3px 0;font-family:monospace">${r.x}</td><td style="padding:3px 0;font-family:monospace">${r.y}</td></tr>`
+    ).join('')
+
+    const html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><title>数据拟合报告</title>
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #1e293b; }
+  h1 { font-size: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+  h2 { font-size: 16px; margin-top: 28px; color: #475569; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th { text-align: left; padding: 6px 12px 6px 0; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 500; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; margin: 12px 0; }
+  .info-grid span { color: #64748b; }
+  .metric { display: inline-block; margin-right: 24px; }
+  .metric-label { color: #64748b; font-size: 12px; }
+  .metric-value { font-family: monospace; font-weight: 600; font-size: 15px; color: #2563eb; }
+  img { max-width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; margin: 12px 0; }
+</style>
+</head>
+<body>
+<h1>数据拟合报告</h1>
+<div class="info-grid">
+  <div><span>拟合模型：</span><strong>${s.fitResult.model}</strong></div>
+  <div><span>X 轴：</span><strong>${s.fitXName}${s.fitXUnit ? ` (${s.fitXUnit})` : ''}</strong></div>
+  <div><span>Y 轴：</span><strong>${s.fitYName}${s.fitYUnit ? ` (${s.fitYUnit})` : ''}</strong></div>
+  <div><span>数据点数：</span><strong>${s.fitRows.filter(r => r.x && r.y).length}</strong></div>
+</div>
+
+<h2>拟合图像</h2>
+${chartImage ? `<img src="${chartImage}" alt="拟合曲线图" />` : '<p>图像不可用</p>'}
+
+<h2>拟合公式</h2>
+<p style="font-family:monospace;font-size:14px;background:#f8fafc;padding:12px;border-radius:6px">${s.fitResult.formula}</p>
+
+<h2>拟合参数</h2>
+<table><thead><tr><th style="text-align:left;padding:6px 12px 6px 0;border-bottom:2px solid #e2e8f0;color:#64748b;font-weight:500">参数</th><th style="text-align:left;padding:6px 12px 6px 0;border-bottom:2px solid #e2e8f0;color:#64748b;font-weight:500">值</th><th style="text-align:left;padding:6px 0;border-bottom:2px solid #e2e8f0;color:#64748b;font-weight:500">标准误</th></tr></thead><tbody>${paramsRows}</tbody></table>
+
+<h2>拟合优度</h2>
+<div style="margin:8px 0">
+  <span class="metric"><span class="metric-label">R² </span><span class="metric-value">${s.fitResult.r_squared}</span></span>
+  <span class="metric"><span class="metric-label">RMSE </span><span class="metric-value">${s.fitResult.rmse}</span></span>
+</div>
+
+<h2>原始数据</h2>
+<table><thead><tr><th style="text-align:left;padding:6px 12px 6px 0;border-bottom:2px solid #e2e8f0;color:#64748b;font-weight:500">#</th><th style="text-align:left;padding:6px 12px 6px 0;border-bottom:2px solid #e2e8f0;color:#64748b;font-weight:500">X</th><th style="text-align:left;padding:6px 0;border-bottom:2px solid #e2e8f0;color:#64748b;font-weight:500">Y</th></tr></thead><tbody>${dataRows}</tbody></table>
+
+<p style="margin-top:32px;font-size:11px;color:#94a3b8">生成时间：${new Date().toLocaleString()}</p>
+</body></html>`
+
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fit_report.html'; a.click()
+    URL.revokeObjectURL(a.href)
   }
 
   return (
@@ -111,7 +172,7 @@ export default function DataFit() {
 
       <div className="w-[65%] flex flex-col gap-3 min-w-0">
         <div className="card-glass p-4 flex-1 min-h-0">
-          <ReactEChartsCore option={chartOption} style={{ height: '100%', width: '100%' }} notMerge lazyUpdate />
+          <ReactEChartsCore ref={chartRef} option={chartOption} style={{ height: '100%', width: '100%' }} notMerge lazyUpdate />
         </div>
         {s.fitResult && (
           <div className="card-glass p-4 flex-shrink-0">

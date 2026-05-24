@@ -1,5 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { Send, FileText, RefreshCw, Settings } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
 import { aiChat, aiAnalyze } from '../api/client'
 import { useAppState } from '../store/AppState'
 
@@ -93,7 +97,15 @@ export default function AIAssistant() {
           {s.chatMessages.map((msg, i) => (
             <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[85%] rounded-xl px-4 py-2.5 text-sm leading-relaxed ${msg.role === 'user' ? 'bg-primary-500 text-white rounded-br-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-bl-md'}`}>
-                {msg.content ? <div className="whitespace-pre-wrap">{msg.content}</div> : (
+                {msg.content ? (
+                  msg.role === 'assistant' ? (
+                    <div className="prose prose-sm dark:prose-invert max-w-none prose-pre:bg-slate-100 dark:prose-pre:bg-slate-800 prose-code:text-primary-600 [&_.katex]:text-sm [&_.katex-display]:my-2">
+                      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{msg.content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <div className="whitespace-pre-wrap">{msg.content}</div>
+                  )
+                ) : (
                   <div className="flex items-center gap-1 text-slate-400">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse" />
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse" style={{ animationDelay: '0.15s' }} />

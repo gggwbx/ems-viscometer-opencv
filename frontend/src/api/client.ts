@@ -46,6 +46,18 @@ export async function stopTracking(taskId: string) {
   await fetch(`${API_BASE}/api/track/stop/${taskId}`, { method: 'POST' })
 }
 
+export async function deleteVideo(videoId: string) {
+  const res = await fetch(`${API_BASE}/api/video/${videoId}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error('Delete failed')
+  return res.json()
+}
+
+export async function clearAllUploads() {
+  const res = await fetch(`${API_BASE}/api/uploads`, { method: 'DELETE' })
+  if (!res.ok) throw new Error('Clear failed')
+  return res.json()
+}
+
 export async function getTrackStatus(taskId: string) {
   const res = await fetch(`${API_BASE}/api/track/status/${taskId}`)
   if (!res.ok) throw new Error('Status check failed')

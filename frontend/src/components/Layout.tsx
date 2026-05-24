@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useTheme } from '../hooks/useTheme'
-import { Sun, Moon, Video, LineChart, Bot, BookOpen, Beaker } from 'lucide-react'
+import { Sun, Moon, Video, LineChart, Bot, BookOpen, Beaker, Trash2 } from 'lucide-react'
+import { clearAllUploads } from '../api/client'
 
 const navItems = [
   { to: '/', icon: Video, label: 'Video Tracking' },
@@ -11,6 +12,16 @@ const navItems = [
 
 export default function Layout() {
   const { theme, toggle } = useTheme()
+
+  const handleClearUploads = async () => {
+    if (!window.confirm('Are you sure you want to delete all uploaded files and tracking results? This action cannot be undone.')) return
+    try {
+      const res = await clearAllUploads()
+      alert(`Cleared: ${res.deleted.videos} videos, ${res.deleted.frames} frames, ${res.deleted.results} tracking results`)
+    } catch {
+      alert('Clear failed')
+    }
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -49,7 +60,14 @@ export default function Layout() {
           ))}
         </nav>
 
-        <div className="border-t border-slate-200 dark:border-slate-700 px-4 py-3">
+        <div className="border-t border-slate-200 dark:border-slate-700 px-4 py-3 space-y-1">
+          <button
+            onClick={handleClearUploads}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all duration-150"
+          >
+            <Trash2 className="h-4.5 w-4.5" />
+            <span>Clear Uploads</span>
+          </button>
           <button
             onClick={toggle}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-150"
