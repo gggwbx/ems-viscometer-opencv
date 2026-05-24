@@ -10,7 +10,6 @@ from models import (
     UploadResponse, RoiRequest, TrackStartResponse,
     FitRequest, FitResponse, FitParam,
     AIChatRequest, AIAnalyzeRequest,
-    StatisticsRequest, StatisticsResponse, StatResult,
 )
 import video_processor
 from video_processor import (
@@ -21,7 +20,6 @@ from video_processor import (
     UPLOAD_DIR, RESULTS_DIR,
 )
 from data_fitter import do_fit
-from statistics import compute_groups
 from ai_assistant import chat_stream, analyze_data
 from config import get_experiment_context, get_experiment_notes, reload_context, get_context_file_count, check_config
 
@@ -188,17 +186,6 @@ async def fit_data(req: FitRequest):
         y_name=req.y_name,
         y_unit=req.y_unit,
     )
-
-
-@app.post("/api/statistics", response_model=StatisticsResponse)
-async def compute_statistics(req: StatisticsRequest):
-    results = compute_groups([g.model_dump() for g in req.groups])
-    stat_results = []
-    for r in results:
-        if "error" in r:
-            raise HTTPException(400, f"[{r['label']}] {r['error']}")
-        stat_results.append(StatResult(**r))
-    return StatisticsResponse(groups=stat_results)
 
 
 @app.post("/api/ai/chat")
